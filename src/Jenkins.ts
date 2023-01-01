@@ -49,33 +49,27 @@ export function colorToBuildStatusName(color: string): string {
     
   switch (color) {	  
     case "blue" :	      
-      return l10n.t("Success");	
     case "blue_anime":	
       return l10n.t("Success");	
             
     case "red" :	      
-      return l10n.t("Failed");	
     case "red_anime":	  
       return l10n.t("Failed");	
 
 
     case "yellow":
-      return l10n.t("Unstable");
     case "yellow_anime":
       return l10n.t("Unstable");
 
     case "grey":
-      return l10n.t("Pending");
     case "grey_anime":
       return l10n.t("Pending");
 
     case "aborted":
-      return l10n.t("Aborted");
     case "aborted_anime":
       return l10n.t("Aborted");
 
     case "notbuilt":
-      return l10n.t("Not built");
     case "notbuilt_anime":
       return l10n.t("Not built");
 
