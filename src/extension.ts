@@ -7,7 +7,6 @@ import * as vscode from "vscode";
 import { JenkinsIndicator } from "./JenkinsIndicator";
 import { Setting } from "./setting";
 import { registerWhatsNew } from "./whats-new/commands";
-import { Container } from "./container";
 import { l10n, Uri } from "vscode";
 import { appendPath, readFileUri, uriExists } from "./fs";
 import { isRemoteUri } from "./remote";
@@ -17,8 +16,6 @@ declare const __non_webpack_require__: typeof require;
 
 export async function activate(context: vscode.ExtensionContext) {
     
-    Container.context = context;
-
     let jenkinsIndicator: JenkinsIndicator;
 
     let currentSettings: Setting[];
@@ -28,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext) {
         updateStatus();
     }
 
-    await registerWhatsNew();
+    await registerWhatsNew(context);
     
     const dispUpdateStatus = vscode.commands.registerCommand("jenkins.updateStatus", () => updateStatus(true));
     context.subscriptions.push(dispUpdateStatus);
