@@ -3,17 +3,16 @@
 *  Licensed under the MIT License. See License.md in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import { commands } from "vscode";
-import { Container } from "../container";
+import * as vscode from "vscode";
 import { WhatsNewManager } from "../../vscode-whats-new/src/Manager";
 import { JenkinsStatusContentProvider, JenkinsStatusSocialMediaProvider } from "./contentProvider";
 
-export async function registerWhatsNew() {
+export async function registerWhatsNew(context: vscode.ExtensionContext) {
     const provider = new JenkinsStatusContentProvider();
-    const viewer = new WhatsNewManager(Container.context)
+    const viewer = new WhatsNewManager(context)
         .registerContentProvider("alefragnani", "jenkins-status", provider)
         .registerSocialMediaProvider(new JenkinsStatusSocialMediaProvider())
     await viewer.showPageInActivation();
-    Container.context.subscriptions.push(commands.registerCommand("jenkins.whatsNew", () => viewer.showPage()));
-    Container.context.subscriptions.push(commands.registerCommand("jenkins._whatsNewContextMenu", () => viewer.showPage()));
+    context.subscriptions.push(vscode.commands.registerCommand("jenkins.whatsNew", () => viewer.showPage()));
+    context.subscriptions.push(vscode.commands.registerCommand("jenkins._whatsNewContextMenu", () => viewer.showPage()));
 }
