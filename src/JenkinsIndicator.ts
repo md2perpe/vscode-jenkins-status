@@ -13,12 +13,16 @@ export class JenkinsIndicator {
 
     private statusBarItems: {[settingName: string]: vscode.StatusBarItem} = {};
     private settingNameToUrl: {[settingName: string]: string} = {};
+    private commands: {[commandName: string]: vscode.Disposable} = {};
 
     public dispose() {
         this.hideReadOnly(this.statusBarItems);
+        Object.entries(this.commands).forEach(([, command]) => {
+            command.dispose();
+        });
     }
 
-    public updateJenkinsStatus(settings: Setting[], registerCommand: (cmd: string, callback: () => void ) => void, deRegisterCommand: (cmd: string) => void): Setting[] {        
+    public updateJenkinsStatus(settings: Setting[]): Setting[] {        
         if (!settings) {
             return;
         }
@@ -42,10 +46,10 @@ export class JenkinsIndicator {
                 this.statusBarItems[setting.name].name = itemId;
                 this.statusBarItems[setting.name].command = "Jenkins." + setting.name + ".openInJenkins";
 
-                registerCommand("Jenkins." + setting.name + ".openInJenkins", () => {
+                this.registerCommand("Jenkins." + setting.name + ".openInJenkins", () => {
                     vscode.env.openExternal(vscode.Uri.parse(this.settingNameToUrl[setting.name]));
                 });
-                registerCommand("Jenkins." + setting.name + ".openInJenkinsConsoleOutput", () => {
+                this.registerCommand("Jenkins." + setting.name + ".openInJenkinsConsoleOutput", () => {
                     jjj.getStatus(url, user, pw)
                     .then((status) => {
                         if (status.connectionStatus === Jenkins.ConnectionStatus.Connected) {
@@ -138,12 +142,24 @@ export class JenkinsIndicator {
         for (const key in tmpStatusBarItems) {
             // eslint-disable-next-line no-prototype-builtins
             if (tmpStatusBarItems.hasOwnProperty(key)) {
-                deRegisterCommand("Jenkins." + key + ".openInJenkins");
-                deRegisterCommand("Jenkins." + key + ".openInJenkinsConsoleOutput");                
+                this.deRegisterCommand("Jenkins." + key + ".openInJenkins");
+                this.deRegisterCommand("Jenkins." + key + ".openInJenkinsConsoleOutput");                
             }
         }
 
         return settings;
+    }
+
+    private registerCommand(cmd: string, callback: () => void ): void {
+        this.commands[cmd] = vscode.commands.registerCommand(cmd, callback);
+    }
+    
+    private deRegisterCommand(cmd: string): void {
+        const command = this.commands[cmd];
+        if (command) {
+            command.dispose();
+            delete this.commands[cmd];
+        }
     }
 
     public hideReadOnly(items) {

@@ -105,7 +105,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         if (jenkinsIndicator) { 
-            currentSettings = jenkinsIndicator.updateJenkinsStatus(await getCurrentSettings(), registerCommand, deRegisterCommand);
+            currentSettings = jenkinsIndicator.updateJenkinsStatus(await getCurrentSettings());
         }
     }
     
@@ -180,30 +180,6 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     }
 
-    function registerCommand(cmd: string, callback: () => void) {
-        const command = vscode.commands.registerCommand(cmd, callback);
-        context.subscriptions.push(new Command(cmd, command));
-    }
-
-    function deRegisterCommand(cmd: string) {
-        let foundIndex = -1;
-        for (let index = 0; index < context.subscriptions.length; index++) {
-            const subscription = context.subscriptions[index];
-            if (subscription instanceof Command) {
-                if (subscription.cmdId === cmd) {
-                    subscription.dispose();
-                    foundIndex = index;
-                    break;
-                }
-            }            
-        }
-
-        if (foundIndex > -1) {
-            context.subscriptions.splice(foundIndex, 1);
-        }
-        return;
-    }
-
     async function getConfigPath(uri: Uri): Promise<Uri> {
         if (await uriExists(appendPath(uri, ".jenkinsrc.js"))) {
             return appendPath(uri, ".jenkinsrc.js");
@@ -223,12 +199,5 @@ export async function activate(context: vscode.ExtensionContext) {
 
     if (vscode.workspace.workspaceFolders) {
         vscode.workspace.workspaceFolders.forEach(folder => createWatcher(folder));
-    }
-}
-
-class Command {
-    constructor(public cmdId: string, private command: vscode.Disposable) {}
-    public dispose() {
-        return this.command.dispose();
     }
 }
