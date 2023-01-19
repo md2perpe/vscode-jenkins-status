@@ -71,7 +71,7 @@ export class JenkinsIndicatorGroup {
                     vscode.env.openExternal(vscode.Uri.parse(this.settingNameToUrl[setting.name]));
                 });
                 this.commandRegistry.add("Jenkins." + setting.name + ".openInJenkinsConsoleOutput", async () => {
-                    const status = await jjj.getStatus(url, user, pw);
+                    const status = await jenkins.getStatus(url, user, pw);
                     if (status.connectionStatus === Jenkins.ConnectionStatus.Connected) {
                         vscode.env.openExternal(vscode.Uri.parse(this.settingNameToUrl[setting.name] + status.buildNr.toString() + "/console"));
                     } else {
@@ -80,7 +80,7 @@ export class JenkinsIndicatorGroup {
                 });
             }
 
-            const jjj: Jenkins.Jenkins = new Jenkins.Jenkins();
+            const jenkins: Jenkins.Jenkins = new Jenkins.Jenkins();
 
             const url = setting.url;
             const user = setting.username ? setting.username : "";
@@ -100,7 +100,7 @@ export class JenkinsIndicatorGroup {
                 continue;
             }     
             
-            const status = await jjj.getStatus(url, user, pw);
+            const status = await jenkins.getStatus(url, user, pw);
             const tooltipJobName = l10n.t("Job Name: {0}", status.jobName);
             const tooltipStatus = l10n.t("Status: {0}", status.statusName);
             const tooltipUrl = l10n.t("URL: {0}", status.url);
