@@ -117,47 +117,51 @@ export class JenkinsIndicatorGroup {
             return;
         }     
         
-        const status = await jenkins.getStatus(url, user, pw);
-        const tooltipJobName = l10n.t("Job Name: {0}", status.jobName);
-        const tooltipStatus = l10n.t("Status: {0}", status.statusName);
-        const tooltipUrl = l10n.t("URL: {0}", status.url);
-        const tooltipConnectionStatus = l10n.t("Connection Status: {0}", status.connectionStatusName);
-        const tooltipBuild = status.buildNr !== undefined 
-            ? l10n.t("Build #: {0}", status.buildNr)
-            : undefined;
-        const tooltipCode = status.code !== undefined
-            ? l10n.t("Code #: {0}", status.code)
-            : undefined;
-
-        let tooltip = tooltipJobName + "\n" +
-            tooltipStatus + "\n" +
-            tooltipUrl + "\n" +
-            tooltipConnectionStatus;
-        if (tooltipBuild !== undefined) 
-            tooltip = tooltip + "\n" + tooltipBuild;
-        if (tooltipCode !== undefined)
-            tooltip = tooltip + "\n" + tooltipCode;
-        
-        let icon: string;
-        switch (status.status) {
-            case Jenkins.BuildStatus.InProgress:
-                icon = codicons.pulse;
-                break;
-
-            case Jenkins.BuildStatus.Success:
-                icon = codicons.check;
-                break;
-
-            case Jenkins.BuildStatus.Failed:
-                icon = codicons.alert;
-                break;
-        
-            default:
-                icon = codicons.stop;
-        }
-            
-        this.statusBarItems[setting.name].text = icon + " " + setting.name;
-        this.statusBarItems[setting.name].tooltip = tooltip;
+        const status = await this.jenkins.getStatus(url, user, pw);
+        this.statusBarItems[setting.name].text = buildIcon(status) + " " + setting.name;
+        this.statusBarItems[setting.name].tooltip = buildTooltip(status);
         this.statusBarItems[setting.name].show();
+    }
+}
+
+
+function buildTooltip(status: Jenkins.JenkinsStatus): string {
+    const tooltipJobName = l10n.t("Job Name: {0}", status.jobName);
+    const tooltipStatus = l10n.t("Status: {0}", status.statusName);
+    const tooltipUrl = l10n.t("URL: {0}", status.url);
+    const tooltipConnectionStatus = l10n.t("Connection Status: {0}", status.connectionStatusName);
+    const tooltipBuild = status.buildNr !== undefined 
+        ? l10n.t("Build #: {0}", status.buildNr)
+        : undefined;
+    const tooltipCode = status.code !== undefined
+        ? l10n.t("Code #: {0}", status.code)
+        : undefined;
+
+    let tooltip = tooltipJobName + "\n" +
+        tooltipStatus + "\n" +
+        tooltipUrl + "\n" +
+        tooltipConnectionStatus;
+    if (tooltipBuild !== undefined) 
+        tooltip = tooltip + "\n" + tooltipBuild;
+    if (tooltipCode !== undefined)
+        tooltip = tooltip + "\n" + tooltipCode;
+
+    return tooltip;
+}
+
+
+function buildIcon(status: Jenkins.JenkinsStatus): string {
+    switch (status.status) {
+        case Jenkins.BuildStatus.InProgress:
+            return codicons.pulse;
+
+        case Jenkins.BuildStatus.Success:
+            return codicons.check;
+
+        case Jenkins.BuildStatus.Failed:
+            return codicons.alert;
+    
+        default:
+            return codicons.stop;
     }
 }
