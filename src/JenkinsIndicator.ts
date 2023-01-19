@@ -39,7 +39,9 @@ export class JenkinsIndicatorGroup {
     private settingNameToUrl: {[settingName: string]: string} = {};
 
     public dispose() {
-        this.hideReadOnly(this.statusBarItems);
+        for (const [, item] of Object.entries(this.statusBarItems)) {
+            item.dispose();
+        }
         this.commandRegistry.dispose();
     }
 
@@ -143,35 +145,16 @@ export class JenkinsIndicatorGroup {
             this.statusBarItems[setting.name].show();
         }
 
-        const tmpStatusBarItems = this.statusBarItems;
-        this.statusBarItems = {};
-        for (const key in this.settingNameToUrl) {
-            // eslint-disable-next-line no-prototype-builtins
-            if (this.settingNameToUrl.hasOwnProperty(key)) {
-                this.statusBarItems[key] = tmpStatusBarItems[key];
-                delete tmpStatusBarItems[key];
-            }
-        }
-        
-        this.hideReadOnly(tmpStatusBarItems);
-        for (const key in tmpStatusBarItems) {
-            // eslint-disable-next-line no-prototype-builtins
-            if (tmpStatusBarItems.hasOwnProperty(key)) {
+        // Remove items without URL
+        for (const [key, item] of Object.entries(this.statusBarItems)) {
+            if (!(key in this.settingNameToUrl)) {
                 this.commandRegistry.remove("Jenkins." + key + ".openInJenkins");
                 this.commandRegistry.remove("Jenkins." + key + ".openInJenkinsConsoleOutput");                
+                item.dispose();
+                delete this.statusBarItems[key];
             }
         }
 
         return settings;
-    }
-
-    public hideReadOnly(items) {
-        for (const key in items) {
-            // eslint-disable-next-line no-prototype-builtins
-            if (items.hasOwnProperty(key)) {
-                const statusBarItem = items[key];
-                statusBarItem.dispose();                
-            }
-        }
     }
 }
