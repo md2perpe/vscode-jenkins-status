@@ -41,13 +41,12 @@ export async function activate(context: vscode.ExtensionContext) {
         updateStatus(false);
     }));
 
-    const dispOpenInJenkins = vscode.commands.registerCommand("jenkins.openInJenkins", async () => {
+    async function selectJob(settings: Setting[]) {
         if (!await hasJenkinsInAnyRoot()) {
             vscode.window.showWarningMessage(l10n.t("The project is not enabled for Jenkins. Missing .jenkins file."));
             return;
         } 
 
-        const settings = currentSettings;
         if (!settings.length) {
             vscode.window.showWarningMessage(l10n.t("The current project is not enabled for Jenkins. Please review .jenkins file."));
             return;
@@ -59,31 +58,21 @@ export async function activate(context: vscode.ExtensionContext) {
                 placeHolder : l10n.t("Select the Jenkins job to open in browser")
             });
         }
-        vscode.commands.executeCommand("Jenkins." + settingName + ".openInJenkins");
-    });
-    context.subscriptions.push(dispOpenInJenkins);
 
-    const dispOpenInJenkinsConsoleOutput = vscode.commands.registerCommand("jenkins.openInJenkinsConsoleOutput", async () => {
-        if (!await hasJenkinsInAnyRoot()) {
-            vscode.window.showWarningMessage(l10n.t("The project is not enabled for Jenkins. Missing .jenkins file."));
-            return;
-        } 
+        return settingName;
+    }
 
-        const settings = currentSettings;
-        if (!settings.length) {
-            vscode.window.showWarningMessage(l10n.t("The current project is not enabled for Jenkins. Please review .jenkins file."));
-            return;
-        }
+    context.subscriptions.push(
+        vscode.commands.registerCommand("jenkins.openInJenkins", async () => {
+            vscode.commands.executeCommand("Jenkins." + await selectJob(currentSettings) + ".openInJenkins");
+        })
+    );
 
-        let settingName: string = settings[0].name;
-        if (settings.length > 1) {
-            settingName = await vscode.window.showQuickPick(settings.map(setting => setting.name ? setting.name : setting.url), {
-                placeHolder : l10n.t("Select the Jenkins job to open in browser")
-            });
-        }
-        vscode.commands.executeCommand("Jenkins." + settingName + ".openInJenkinsConsoleOutput");
-    });
-    context.subscriptions.push(dispOpenInJenkinsConsoleOutput);
+    context.subscriptions.push(
+        vscode.commands.registerCommand("jenkins.openInJenkinsConsoleOutput", async () => {
+            vscode.commands.executeCommand("Jenkins." + await selectJob(currentSettings) + ".openInJenkinsConsoleOutput");
+        })
+    );
     
     function createJenkinsIndicator(aContext: vscode.ExtensionContext) {
         if (jenkinsIndicator) {
