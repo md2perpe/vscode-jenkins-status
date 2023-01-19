@@ -48,13 +48,13 @@ export class JenkinsIndicatorGroup {
             return;
         }
         
-        let noNameCount = -1;
+        let noNameCount = 0;
         this.settingNameToUrl = {};
 
         for (const setting of settings) {
             if (!(setting.name)) {
-                noNameCount++;
                 setting.name = "Jenkins " + (noNameCount || "");
+                noNameCount++;
             }
 
             this.settingNameToUrl[setting.name] = setting.url;
