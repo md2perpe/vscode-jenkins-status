@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
-import { JenkinsIndicator } from "./JenkinsIndicator";
+import { JenkinsIndicatorGroup } from "./JenkinsIndicator";
 import { Setting } from "./setting";
 import { registerWhatsNew } from "./whats-new/commands";
 import { l10n, Uri } from "vscode";
@@ -16,7 +16,7 @@ declare const __non_webpack_require__: typeof require;
 
 export async function activate(context: vscode.ExtensionContext) {
     
-    let jenkinsIndicator: JenkinsIndicator;
+    let jenkinsIndicator: JenkinsIndicatorGroup;
 
     let currentSettings: Setting[];
     
@@ -58,7 +58,7 @@ export async function activate(context: vscode.ExtensionContext) {
             return;
         }
         
-        jenkinsIndicator = new JenkinsIndicator();
+        jenkinsIndicator = new JenkinsIndicatorGroup();
         aContext.subscriptions.push(jenkinsIndicator);
     }
 

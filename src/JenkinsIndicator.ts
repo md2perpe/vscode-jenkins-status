@@ -9,7 +9,7 @@ import { Setting } from "./setting";
 import { codicons } from "vscode-ext-codicons";
 import { l10n } from "vscode";
 
-export class JenkinsIndicator {
+export class JenkinsIndicatorGroup {
 
     private statusBarItems: {[settingName: string]: vscode.StatusBarItem} = {};
     private settingNameToUrl: {[settingName: string]: string} = {};
