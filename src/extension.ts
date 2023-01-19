@@ -53,15 +53,13 @@ export async function activate(context: vscode.ExtensionContext) {
             return;
         }
 
+        let settingName: string = settings[0].name;
         if (settings.length > 1) {
-            vscode.window.showQuickPick(settings.map(setting => setting.name ? setting.name : setting.url), {
+            settingName = await vscode.window.showQuickPick(settings.map(setting => setting.name ? setting.name : setting.url), {
                 placeHolder : l10n.t("Select the Jenkins job to open in browser")
-            }).then((settingName: string) => {
-                vscode.commands.executeCommand("Jenkins." + settingName + ".openInJenkins");
             });
-        } else {
-            vscode.commands.executeCommand("Jenkins." + settings[0].name + ".openInJenkins");
-        }        
+        }
+        vscode.commands.executeCommand("Jenkins." + settingName + ".openInJenkins");
     });
     context.subscriptions.push(dispOpenInJenkins);
 
@@ -77,15 +75,13 @@ export async function activate(context: vscode.ExtensionContext) {
             return;
         }
 
+        let settingName: string = settings[0].name;
         if (settings.length > 1) {
-            vscode.window.showQuickPick(settings.map(setting => setting.name ? setting.name : setting.url), {
+            settingName = await vscode.window.showQuickPick(settings.map(setting => setting.name ? setting.name : setting.url), {
                 placeHolder : l10n.t("Select the Jenkins job to open in browser")
-            }).then((settingName: string) => {
-                vscode.commands.executeCommand("Jenkins." + settingName + ".openInJenkinsConsoleOutput");
             });
-        } else {
-            vscode.commands.executeCommand("Jenkins." + settings[0].name + ".openInJenkinsConsoleOutput");
-        }   
+        }
+        vscode.commands.executeCommand("Jenkins." + settingName + ".openInJenkinsConsoleOutput");
     });
     context.subscriptions.push(dispOpenInJenkinsConsoleOutput);
     
@@ -105,7 +101,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         if (jenkinsIndicator) { 
-            currentSettings = jenkinsIndicator.updateJenkinsStatus(await getCurrentSettings());
+            currentSettings = await jenkinsIndicator.updateJenkinsStatus(await getCurrentSettings());
         }
     }
     
