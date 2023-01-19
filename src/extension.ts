@@ -106,7 +106,7 @@ async function selectJob(settings: Setting[]) {
 
     let settingName: string = settings[0].name;
     if (settings.length > 1) {
-        settingName = await vscode.window.showQuickPick(settings.map(setting => setting.name ? setting.name : setting.url), {
+        settingName = await vscode.window.showQuickPick(settings.map(setting => setting.name || setting.url), {
             placeHolder : l10n.t("Select the Jenkins job to open in browser")
         });
     }

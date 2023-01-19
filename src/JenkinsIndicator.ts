@@ -54,7 +54,7 @@ export class JenkinsIndicatorGroup {
         for (const setting of settings) {
             if (!(setting.name)) {
                 noNameCount++;
-                setting.name = "Jenkins " + (noNameCount ? noNameCount : "");
+                setting.name = "Jenkins " + (noNameCount || "");
             }
 
             this.settingNameToUrl[setting.name] = setting.url;
@@ -82,8 +82,8 @@ export class JenkinsIndicatorGroup {
             const jenkins: Jenkins.Jenkins = new Jenkins.Jenkins();
 
             const url = setting.url;
-            const user = setting.username ? setting.username : "";
-            const pw = setting.password ? setting.password : "";
+            const user = setting.username || "";
+            const pw = setting.password || "";
 
             if (setting.strictTls !== undefined) {
                 process.env.NODE_TLS_REJECT_UNAUTHORIZED = setting.strictTls ? "1" : "0";
