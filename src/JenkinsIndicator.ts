@@ -9,17 +9,38 @@ import { Setting } from "./setting";
 import { codicons } from "vscode-ext-codicons";
 import { l10n } from "vscode";
 
-export class JenkinsIndicatorGroup {
-
-    private statusBarItems: {[settingName: string]: vscode.StatusBarItem} = {};
-    private settingNameToUrl: {[settingName: string]: string} = {};
+class CommandRegistry {
     private commands: {[commandName: string]: vscode.Disposable} = {};
 
-    public dispose() {
-        this.hideReadOnly(this.statusBarItems);
+    add(cmd: string, callback: () => void): void {
+        this.commands[cmd] = vscode.commands.registerCommand(cmd, callback);
+    }
+
+    remove(cmd: string): void {
+        const command = this.commands[cmd];
+        if (command) {
+            command.dispose();
+            delete this.commands[cmd];
+        }
+    }
+
+    dispose(): void {
         Object.entries(this.commands).forEach(([, command]) => {
             command.dispose();
         });
+    }
+}
+
+
+export class JenkinsIndicatorGroup {
+    private commandRegistry: CommandRegistry = new CommandRegistry();
+
+    private statusBarItems: {[settingName: string]: vscode.StatusBarItem} = {};
+    private settingNameToUrl: {[settingName: string]: string} = {};
+
+    public dispose() {
+        this.hideReadOnly(this.statusBarItems);
+        this.commandRegistry.dispose();
     }
 
     public async updateJenkinsStatus(settings: Setting[]): Promise<Setting[]> {        
@@ -46,10 +67,10 @@ export class JenkinsIndicatorGroup {
                 this.statusBarItems[setting.name].name = itemId;
                 this.statusBarItems[setting.name].command = "Jenkins." + setting.name + ".openInJenkins";
 
-                this.registerCommand("Jenkins." + setting.name + ".openInJenkins", () => {
+                this.commandRegistry.add("Jenkins." + setting.name + ".openInJenkins", () => {
                     vscode.env.openExternal(vscode.Uri.parse(this.settingNameToUrl[setting.name]));
                 });
-                this.registerCommand("Jenkins." + setting.name + ".openInJenkinsConsoleOutput", async () => {
+                this.commandRegistry.add("Jenkins." + setting.name + ".openInJenkinsConsoleOutput", async () => {
                     const status = await jjj.getStatus(url, user, pw);
                     if (status.connectionStatus === Jenkins.ConnectionStatus.Connected) {
                         vscode.env.openExternal(vscode.Uri.parse(this.settingNameToUrl[setting.name] + status.buildNr.toString() + "/console"));
@@ -137,24 +158,12 @@ export class JenkinsIndicatorGroup {
         for (const key in tmpStatusBarItems) {
             // eslint-disable-next-line no-prototype-builtins
             if (tmpStatusBarItems.hasOwnProperty(key)) {
-                this.deRegisterCommand("Jenkins." + key + ".openInJenkins");
-                this.deRegisterCommand("Jenkins." + key + ".openInJenkinsConsoleOutput");                
+                this.commandRegistry.remove("Jenkins." + key + ".openInJenkins");
+                this.commandRegistry.remove("Jenkins." + key + ".openInJenkinsConsoleOutput");                
             }
         }
 
         return settings;
-    }
-
-    private registerCommand(cmd: string, callback: () => void ): void {
-        this.commands[cmd] = vscode.commands.registerCommand(cmd, callback);
-    }
-    
-    private deRegisterCommand(cmd: string): void {
-        const command = this.commands[cmd];
-        if (command) {
-            command.dispose();
-            delete this.commands[cmd];
-        }
     }
 
     public hideReadOnly(items) {
