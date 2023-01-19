@@ -51,8 +51,7 @@ export class JenkinsIndicatorGroup {
         let noNameCount = -1;
         this.settingNameToUrl = {};
 
-        for (let index = 0; index < settings.length; index++) {
-            const setting = settings[index];
+        for (const setting of settings) {
             if (!(setting.name)) {
                 noNameCount++;
                 setting.name = "Jenkins " + (noNameCount ? noNameCount : "");
