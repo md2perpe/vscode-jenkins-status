@@ -16,7 +16,7 @@ declare const __non_webpack_require__: typeof require;
 
 export async function activate(context: vscode.ExtensionContext) {
     
-    let jenkinsIndicator: JenkinsIndicatorGroup;
+    let indicatorGroup: JenkinsIndicatorGroup;
 
     let currentSettings: Setting[];
     
@@ -54,12 +54,12 @@ export async function activate(context: vscode.ExtensionContext) {
     );
     
     function createJenkinsIndicator(aContext: vscode.ExtensionContext) {
-        if (jenkinsIndicator) {
+        if (indicatorGroup) {
             return;
         }
         
-        jenkinsIndicator = new JenkinsIndicatorGroup();
-        aContext.subscriptions.push(jenkinsIndicator);
+        indicatorGroup = new JenkinsIndicatorGroup();
+        aContext.subscriptions.push(indicatorGroup);
     }
 
     async function updateStatus(showMessage?: boolean) {
@@ -68,8 +68,8 @@ export async function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        if (jenkinsIndicator) { 
-            currentSettings = await jenkinsIndicator.updateJenkinsStatus(await getCurrentSettings());
+        if (indicatorGroup) { 
+            currentSettings = await indicatorGroup.updateJenkinsStatus(await getCurrentSettings());
         }
     }
     
