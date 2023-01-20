@@ -47,7 +47,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     
     async function updateStatus() {
-        currentSettings = await indicatorGroup.updateJenkinsStatus(await getCurrentSettings());
+        currentSettings = await reloadSettings();
+        await indicatorGroup.updateJenkinsStatus(currentSettings);
     }
     
     const MINUTE = 60_000;  // milliseconds
@@ -122,7 +123,7 @@ async function getConfigPath(uri: Uri): Promise<Uri> {
 
 
 
-async function getCurrentSettings(): Promise<Setting[]> {
+async function reloadSettings(): Promise<Setting[]> {
     if (!vscode.workspace.workspaceFolders) {
         return [];
     }
