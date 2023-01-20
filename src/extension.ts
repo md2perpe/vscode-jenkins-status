@@ -15,6 +15,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(indicatorGroup);
 
     const settingsProvider = new SettingsProvider;
+    context.subscriptions.push(settingsProvider);
     
 
     if (await settingsProvider.hasJenkinsInAnyRoot()) {
@@ -38,30 +39,10 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand("Jenkins." + await selectJob(settingsProvider.currentSettings) + ".openInJenkinsConsoleOutput");
     }));
 
-    // Register event listeners
-    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(settingsProvider.doReloadSettings));
-    context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(settingsProvider.doReloadSettings));
-
 
     settingsProvider.onSettingsChange(async (settings) => {
         await indicatorGroup.updateJenkinsStatus(settings);
     });
-    
-    const MINUTE = 60_000;  // milliseconds
-    const polling: number = vscode.workspace.getConfiguration("jenkins").get("polling", 0);
-    if (polling > 0) {
-        setInterval(settingsProvider.doReloadSettings, polling * MINUTE);
-    }
-
-    if (vscode.workspace.workspaceFolders) {
-        vscode.workspace.workspaceFolders.forEach(folder => {
-            const fileSystemWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, "*.{jenkins,jenkins.js}"));
-            fileSystemWatcher.onDidChange(settingsProvider.doReloadSettings, context.subscriptions);
-            fileSystemWatcher.onDidCreate(settingsProvider.doReloadSettings, context.subscriptions);
-            fileSystemWatcher.onDidDelete(settingsProvider.doReloadSettings, context.subscriptions);
-            context.subscriptions.push(fileSystemWatcher);
-        });
-    }
 
 
     async function selectJob(settings: Setting[]) {

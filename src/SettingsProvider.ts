@@ -14,6 +14,36 @@ export class SettingsProvider {
     public onSettingsChange = this.settingsChangeEmitter.event;
 
 
+    private subscriptions: vscode.Disposable[] = [];
+
+    public dispose() {
+        for (const disposable of this.subscriptions) {
+            disposable.dispose();
+        }
+    }
+
+
+    constructor() {
+        this.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(this.doReloadSettings));
+        this.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(this.doReloadSettings));
+
+        if (vscode.workspace.workspaceFolders) {
+            vscode.workspace.workspaceFolders.forEach(folder => {
+                const fileSystemWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, "*.{jenkins,jenkins.js}"));
+                fileSystemWatcher.onDidChange(this.doReloadSettings, this.subscriptions);
+                fileSystemWatcher.onDidCreate(this.doReloadSettings, this.subscriptions);
+                fileSystemWatcher.onDidDelete(this.doReloadSettings, this.subscriptions);
+                this.subscriptions.push(fileSystemWatcher);
+            });
+        }
+    
+        const MINUTE = 60_000;  // milliseconds
+        const polling: number = vscode.workspace.getConfiguration("jenkins").get("polling", 0);
+        if (polling > 0) {
+            setInterval(this.doReloadSettings, polling * MINUTE);
+        }
+    }
+
     public currentSettings: Setting[] = [];
 
     public async doReloadSettings() {
