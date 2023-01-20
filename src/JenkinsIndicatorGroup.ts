@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { l10n } from "vscode";
-import { Setting } from "./setting";
+import { Setting } from "./Setting";
 import { JenkinsIndicator } from "./JenkinsIndicator";
 import { SettingsProvider } from "./SettingsProvider";
 import { CommandRegistry } from "./CommandRegistry";

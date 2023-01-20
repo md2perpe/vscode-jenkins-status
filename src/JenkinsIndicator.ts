@@ -5,7 +5,7 @@
 
 import * as vscode from "vscode";
 import * as Jenkins from "./Jenkins";
-import { Setting } from "./setting";
+import { Setting } from "./Setting";
 import { codicons } from "vscode-ext-codicons";
 import { l10n } from "vscode";
 import { CommandRegistry } from "./CommandRegistry";

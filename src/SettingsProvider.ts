@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
 import { l10n, Uri } from "vscode";
-import { Setting } from "./setting";
-import { isRemoteUri } from "./remote";
-import { appendPath, readFileUri, uriExists } from "./fs";
+import { Setting } from "./Setting";
 
 declare const __webpack_require__: typeof require;
 declare const __non_webpack_require__: typeof require;
@@ -104,7 +102,8 @@ async function readSettings(jenkinsSettingsPath: Uri): Promise<string> {
             return undefined;
         }
 
-        if (isRemoteUri(jenkinsSettingsPath)) {
+        const isRemoteUri = jenkinsSettingsPath.scheme === "vscode-remote" || jenkinsSettingsPath.scheme === "vscode-vfs";
+        if (isRemoteUri) {
             vscode.window.showInformationMessage(l10n.t("This workspace contains a `.jenkinsrc.js` file, which requires the Jenkins Status extension to be installed on the remote."));
             return undefined;
         }
@@ -113,16 +112,26 @@ async function readSettings(jenkinsSettingsPath: Uri): Promise<string> {
         delete r.cache[r.resolve(jenkinsSettingsPath.fsPath)];
         return await r(jenkinsSettingsPath.fsPath);
     } else {
-        const content = await readFileUri(jenkinsSettingsPath);
-        return content;
+        const bytes = await vscode.workspace.fs.readFile(jenkinsSettingsPath);
+        return JSON.parse(Buffer.from(bytes).toString('utf8'));
     }
 }
 
 async function getConfigPath(uri: Uri): Promise<Uri> {
-    if (await uriExists(appendPath(uri, ".jenkinsrc.js"))) {
-        return appendPath(uri, ".jenkinsrc.js");
-    } else if (uriExists(appendPath(uri, ".jenkins"))) {
-        return appendPath(uri, ".jenkins");
+    for (const fileName of [".jenkinsrc.js", ".jenkins"]) {
+        const path = Uri.joinPath(uri, fileName);
+        if (uriExists(path)) {
+            return path;
+        }
     }
     return uri;
+}
+
+async function uriExists(uri: vscode.Uri) {
+    try {
+        await vscode.workspace.fs.stat(uri);
+        return true;
+    } catch {
+        return false;
+    }
 }
