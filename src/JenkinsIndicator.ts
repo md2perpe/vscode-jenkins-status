@@ -32,22 +32,72 @@ class CommandRegistry {
 }
 
 
-export class JenkinsIndicatorGroup {
-    private jenkins: Jenkins.Jenkins;
+const jenkins = new Jenkins.Jenkins();
 
-    private commandRegistry: CommandRegistry = new CommandRegistry();
 
-    private statusBarItems: {[settingName: string]: vscode.StatusBarItem} = {};
+class JenkinsIndicator {
+    private statusbarItem: vscode.StatusBarItem;
+    private commandRegistry = new CommandRegistry;
 
-    constructor() {
-        this.jenkins = new Jenkins.Jenkins();
+    constructor(name: string, itemId: string, setting: Setting) {
+        this.statusbarItem = vscode.window.createStatusBarItem(`alefragnani.jenkins-status.${itemId}`, vscode.StatusBarAlignment.Left);
+        this.statusbarItem.name = itemId;
+        this.statusbarItem.command = "Jenkins." + name + ".openInJenkins";
+
+        this.commandRegistry.add("Jenkins." + name + ".openInJenkins", () => {
+            vscode.env.openExternal(vscode.Uri.parse(setting.url));
+        });
+        this.commandRegistry.add("Jenkins." + name + ".openInJenkinsConsoleOutput", async () => {
+            const url = setting.url;
+            const user = setting.username || "";
+            const pw = setting.password || "";
+            const status = await jenkins.getStatus(url, user, pw);
+            if (status.connectionStatus === Jenkins.ConnectionStatus.Connected) {
+                vscode.env.openExternal(vscode.Uri.parse(setting.url + status.buildNr.toString() + "/console"));
+            } else {
+                vscode.window.showWarningMessage(l10n.t("The Jenkins job has some connection issues. Please check the status bar for more information."));
+            }
+        });
+    }
+
+    public async update(setting: Setting) {
+        const url = setting.url;
+
+        if (setting.strictTls !== undefined) {
+            process.env.NODE_TLS_REJECT_UNAUTHORIZED = setting.strictTls ? "1" : "0";
+        }
+        
+        this.statusbarItem.text = setting.name;
+        this.statusbarItem.show();
+        
+        // invalid URL
+        if (!url) {
+            this.statusbarItem.tooltip = l10n.t("No URL Defined");
+            this.statusbarItem.text = "Jenkins " + codicons.x;
+            return;
+        }     
+        
+        const user = setting.username || "";
+        const pw = setting.password || "";
+        const status = await jenkins.getStatus(url, user, pw);
+        this.statusbarItem.text = buildIcon(status) + " " + setting.name;
+        this.statusbarItem.tooltip = buildTooltip(status);
+        this.statusbarItem.show();
     }
 
     public dispose() {
-        for (const [, item] of Object.entries(this.statusBarItems)) {
+        this.statusbarItem.dispose();
+        this.commandRegistry.dispose();
+    }
+}
+
+export class JenkinsIndicatorGroup {
+    private indicators: { [name: string]: JenkinsIndicator } = {};
+
+    public dispose() {
+        for (const [, item] of Object.entries(this.indicators)) {
             item.dispose();
         }
-        this.commandRegistry.dispose();
     }
 
     public async updateJenkinsStatus(settings: Setting[]): Promise<Setting[]> {        
@@ -64,7 +114,7 @@ export class JenkinsIndicatorGroup {
             }
         }
         
-        const oldNames = Object.entries(this.statusBarItems).map(([name]) => name);
+        const oldNames = Object.entries(this.indicators).map(([name]) => name);
         const newNames = settings.map(setting => setting.name);
         
         const addedNames   = newNames.filter(name => !oldNames.includes(name));
@@ -90,58 +140,23 @@ export class JenkinsIndicatorGroup {
         return settings;
     }
 
-    private addStatusbarItem(name: string, itemId: string, setting: Setting) {
-        this.statusBarItems[name] = vscode.window.createStatusBarItem(`alefragnani.jenkins-status.${itemId}`, vscode.StatusBarAlignment.Left);
-        this.statusBarItems[name].name = itemId;
-        this.statusBarItems[name].command = "Jenkins." + name + ".openInJenkins";
-
-        this.commandRegistry.add("Jenkins." + name + ".openInJenkins", () => {
-            vscode.env.openExternal(vscode.Uri.parse(setting.url));
-        });
-        this.commandRegistry.add("Jenkins." + name + ".openInJenkinsConsoleOutput", async () => {
-            const url = setting.url;
-            const user = setting.username || "";
-            const pw = setting.password || "";
-            const status = await this.jenkins.getStatus(url, user, pw);
-            if (status.connectionStatus === Jenkins.ConnectionStatus.Connected) {
-                vscode.env.openExternal(vscode.Uri.parse(setting.url + status.buildNr.toString() + "/console"));
-            } else {
-                vscode.window.showWarningMessage(l10n.t("The Jenkins job has some connection issues. Please check the status bar for more information."));
-            }
-        });
+    public addStatusbarItem(name: string, itemId: string, setting: Setting) {
+        this.indicators[name] = new JenkinsIndicator(name, itemId, setting);
     }
 
-    private removeStatusbarItem(name: string) {
-        this.commandRegistry.remove("Jenkins." + name + ".openInJenkins");
-        this.commandRegistry.remove("Jenkins." + name + ".openInJenkinsConsoleOutput");
-        this.statusBarItems[name].dispose();
-        delete this.statusBarItems[name];
-    }
-
-    private async updateStatusbarItem(setting: Setting) {
-        const url = setting.url;
-
-        if (setting.strictTls !== undefined) {
-            process.env.NODE_TLS_REJECT_UNAUTHORIZED = setting.strictTls ? "1" : "0";
+    public removeStatusbarItem(name: string) {
+        const indicator = this.indicators[name];
+        if (indicator) {
+            indicator.dispose();
+            delete this.indicators[name];
         }
-        
-        this.statusBarItems[setting.name].text = setting.name;
-        this.statusBarItems[setting.name].show();
-        
-        // invalid URL
-        if (!url) {
-            this.statusBarItems[setting.name].tooltip = l10n.t("No URL Defined");
-            this.statusBarItems[setting.name].text = "Jenkins " + codicons.x;
-            return;
-        }     
-        
-        const user = setting.username || "";
-        const pw = setting.password || "";
-        const status = await this.jenkins.getStatus(url, user, pw);
-        this.statusBarItems[setting.name].text = buildIcon(status) + " " + setting.name;
-        this.statusBarItems[setting.name].tooltip = buildTooltip(status);
-        this.statusBarItems[setting.name].show();
+    }
 
+    public async updateStatusbarItem(setting: Setting) {
+        const indicator = this.indicators[setting.name];
+        if (indicator) {
+            indicator.update(setting);
+        }
     }
 }
 
