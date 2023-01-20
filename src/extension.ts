@@ -15,13 +15,12 @@ declare const __webpack_require__: typeof require;
 declare const __non_webpack_require__: typeof require;
 
 export async function activate(context: vscode.ExtensionContext) {
-    
-    let indicatorGroup: JenkinsIndicatorGroup;
+    const indicatorGroup = new JenkinsIndicatorGroup;
+    context.subscriptions.push(indicatorGroup);
 
     let currentSettings: Setting[];
     
     if (await hasJenkinsInAnyRoot()) {
-        createJenkinsIndicator(context);
         updateStatus();
     }
 
@@ -38,9 +37,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Register event listeners
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-        if (await hasJenkinsInAnyRoot()) {
-            createJenkinsIndicator(context);
-        }
         updateStatus()}
     ));
     context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(async () => {
@@ -48,15 +44,6 @@ export async function activate(context: vscode.ExtensionContext) {
     }));
 
     
-    function createJenkinsIndicator(aContext: vscode.ExtensionContext) {
-        if (indicatorGroup) {
-            return;
-        }
-        
-        indicatorGroup = new JenkinsIndicatorGroup();
-        aContext.subscriptions.push(indicatorGroup);
-    }
-
     async function updateStatus(showMessage?: boolean) {
         if (showMessage && !await hasJenkinsInAnyRoot()) {
             vscode.window.showWarningMessage(l10n.t("The project is not enabled for Jenkins. Missing .jenkins file."));
