@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
-import { JenkinsIndicatorGroup } from "./JenkinsIndicator";
+import { JenkinsIndicatorGroup } from "./JenkinsIndicatorGroup";
 import { SettingsProvider } from "./SettingsProvider";
 import { registerWhatsNew } from "./whats-new/commands";
 
