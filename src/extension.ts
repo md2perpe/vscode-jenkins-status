@@ -50,9 +50,7 @@ export async function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        if (indicatorGroup) { 
-            currentSettings = await indicatorGroup.updateJenkinsStatus(await getCurrentSettings());
-        }
+        currentSettings = await indicatorGroup.updateJenkinsStatus(await getCurrentSettings());
     }
     
     const MINUTE = 60_000;  // milliseconds
