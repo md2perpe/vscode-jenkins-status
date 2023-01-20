@@ -42,12 +42,8 @@ export async function activate(context: vscode.ExtensionContext) {
     }));
 
     // Register event listeners
-    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-        updateStatus()}
-    ));
-    context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(async () => {
-        updateStatus();
-    }));
+    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(updateStatus));
+    context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(updateStatus));
 
     
     async function updateStatus() {
@@ -57,15 +53,15 @@ export async function activate(context: vscode.ExtensionContext) {
     const MINUTE = 60_000;  // milliseconds
     const polling: number = vscode.workspace.getConfiguration("jenkins").get("polling", 0);
     if (polling > 0) {
-        setInterval(() => updateStatus(), polling * MINUTE);
+        setInterval(updateStatus, polling * MINUTE);
     }
 
     if (vscode.workspace.workspaceFolders) {
         vscode.workspace.workspaceFolders.forEach(folder => {
             const fileSystemWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, "*.{jenkins,jenkins.js}"));
-            fileSystemWatcher.onDidChange(() => updateStatus(), context.subscriptions);
-            fileSystemWatcher.onDidCreate(() => updateStatus(), context.subscriptions);
-            fileSystemWatcher.onDidDelete(() => updateStatus(), context.subscriptions);
+            fileSystemWatcher.onDidChange(updateStatus, context.subscriptions);
+            fileSystemWatcher.onDidCreate(updateStatus, context.subscriptions);
+            fileSystemWatcher.onDidDelete(updateStatus, context.subscriptions);
             context.subscriptions.push(fileSystemWatcher);
         });
     }
