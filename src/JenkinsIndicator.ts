@@ -155,7 +155,7 @@ export class JenkinsIndicatorGroup {
     public async updateStatusbarItem(setting: Setting) {
         const indicator = this.indicators[setting.name];
         if (indicator) {
-            indicator.update(setting);
+            await indicator.update(setting);
         }
     }
 }
