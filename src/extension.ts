@@ -27,7 +27,13 @@ export async function activate(context: vscode.ExtensionContext) {
     await registerWhatsNew(context);
     
     // Register commands
-    context.subscriptions.push(vscode.commands.registerCommand("jenkins.updateStatus", () => updateStatus(true)));
+    context.subscriptions.push(vscode.commands.registerCommand("jenkins.updateStatus", async () => {
+        if (!await hasJenkinsInAnyRoot()) {
+            vscode.window.showWarningMessage(l10n.t("The project is not enabled for Jenkins. Missing .jenkins file."));
+            return;
+        }
+        updateStatus();
+    }));
     context.subscriptions.push(vscode.commands.registerCommand("jenkins.openInJenkins", async () => {
         vscode.commands.executeCommand("Jenkins." + await selectJob(currentSettings) + ".openInJenkins");
     }));
@@ -40,16 +46,11 @@ export async function activate(context: vscode.ExtensionContext) {
         updateStatus()}
     ));
     context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(async () => {
-        updateStatus(false);
+        updateStatus();
     }));
 
     
-    async function updateStatus(showMessage?: boolean) {
-        if (showMessage && !await hasJenkinsInAnyRoot()) {
-            vscode.window.showWarningMessage(l10n.t("The project is not enabled for Jenkins. Missing .jenkins file."));
-            return;
-        }
-
+    async function updateStatus() {
         currentSettings = await indicatorGroup.updateJenkinsStatus(await getCurrentSettings());
     }
     
@@ -62,9 +63,9 @@ export async function activate(context: vscode.ExtensionContext) {
     if (vscode.workspace.workspaceFolders) {
         vscode.workspace.workspaceFolders.forEach(folder => {
             const fileSystemWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, "*.{jenkins,jenkins.js}"));
-            fileSystemWatcher.onDidChange(() => updateStatus(false), context.subscriptions);
-            fileSystemWatcher.onDidCreate(() => updateStatus(false), context.subscriptions);
-            fileSystemWatcher.onDidDelete(() => updateStatus(false), context.subscriptions);
+            fileSystemWatcher.onDidChange(() => updateStatus(), context.subscriptions);
+            fileSystemWatcher.onDidCreate(() => updateStatus(), context.subscriptions);
+            fileSystemWatcher.onDidDelete(() => updateStatus(), context.subscriptions);
             context.subscriptions.push(fileSystemWatcher);
         });
     }
