@@ -99,10 +99,8 @@ async function hasJenkinsInAnyRoot(): Promise<boolean> {
 
     let hasAny = false;
 
-    // for (let index = 0; index < vscode.workspace.workspaceFolders.length; index++) {
-    for (const element of vscode.workspace.workspaceFolders) {
-        // const element: vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[index];
-        hasAny = !!await getConfigPath(element.uri);
+    for (const folder of vscode.workspace.workspaceFolders) {
+        hasAny = !!await getConfigPath(folder.uri);
         if (hasAny) {
             return hasAny;
         }
@@ -130,9 +128,9 @@ async function reloadSettings(): Promise<Setting[]> {
 
     let settings: Setting[] = [];
     try {
-        for (const element of vscode.workspace.workspaceFolders) {
-            const jenkinsSettingsPath = await getConfigPath(element.uri);            
-            if (jenkinsSettingsPath.fsPath !== element.uri.fsPath) {
+        for (const folder of vscode.workspace.workspaceFolders) {
+            const jenkinsSettingsPath = await getConfigPath(folder.uri);            
+            if (jenkinsSettingsPath.fsPath !== folder.uri.fsPath) {
                 const jenkinsSettings = await readSettings(jenkinsSettingsPath);
                 if (!jenkinsSettings) {
                     return undefined;
