@@ -73,7 +73,6 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     }
     
-    // let interval;
     const polling: number = vscode.workspace.getConfiguration("jenkins").get("polling", 0);
     if (polling > 0) {
         setInterval(() => updateStatus(), polling * 60000);
