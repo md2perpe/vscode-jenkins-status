@@ -31,11 +31,11 @@ export class JenkinsIndicatorGroup {
 
     private registerCommands() {
         this.commandRegistry.add("jenkins.updateStatus", async () => {
-            if (!await this.settingsProvider.hasJenkinsInAnyRoot()) {
+            if (!await this.settingsProvider.isJenkinsEnabled()) {
                 vscode.window.showWarningMessage(l10n.t("The project is not enabled for Jenkins. Missing .jenkins file."));
                 return;
             }
-            this.settingsProvider.doReloadSettings();
+            this.settingsProvider.reload();
         });
         this.commandRegistry.add("jenkins.openInJenkins", async () => {
             const name = await this.selectJob(this.settingsProvider.currentSettings);
@@ -49,7 +49,7 @@ export class JenkinsIndicatorGroup {
 
 
     async selectJob(settings: Setting[]) {
-        if (!await this.settingsProvider.hasJenkinsInAnyRoot()) {
+        if (!await this.settingsProvider.isJenkinsEnabled()) {
             vscode.window.showWarningMessage(l10n.t("The project is not enabled for Jenkins. Missing .jenkins file."));
             return;
         } 

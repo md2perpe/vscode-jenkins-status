@@ -21,36 +21,21 @@ export class SettingsProvider {
     }
 
 
-    constructor() {
-        this.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(this.doReloadSettings));
-        this.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(this.doReloadSettings));
-
-        if (vscode.workspace.workspaceFolders) {
-            vscode.workspace.workspaceFolders.forEach(folder => {
-                const fileSystemWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, "*.{jenkins,jenkins.js}"));
-                fileSystemWatcher.onDidChange(this.doReloadSettings, this.subscriptions);
-                fileSystemWatcher.onDidCreate(this.doReloadSettings, this.subscriptions);
-                fileSystemWatcher.onDidDelete(this.doReloadSettings, this.subscriptions);
-                this.subscriptions.push(fileSystemWatcher);
-            });
-        }
-    
-        const MINUTE = 60_000;  // milliseconds
-        const polling: number = vscode.workspace.getConfiguration("jenkins").get("polling", 0);
-        if (polling > 0) {
-            setInterval(this.doReloadSettings, polling * MINUTE);
+    constructor(eventSet: { [name: string]: vscode.Event<unknown> }) {
+        for (const [, onEvent] of Object.entries(eventSet)) {
+            onEvent(this.reload, this.subscriptions);
         }
     }
 
     public currentSettings: Setting[] = [];
 
-    public async doReloadSettings() {
-        this.currentSettings = await reloadSettings();
+    public async reload() {
+        this.currentSettings = await loadSettings();
         this.settingsChangeEmitter.fire(this.currentSettings);
     }
     
 
-    public async hasJenkinsInAnyRoot(): Promise<boolean> {
+    public async isJenkinsEnabled(): Promise<boolean> {
 
         if (!vscode.workspace.workspaceFolders) {
             return false;
@@ -67,10 +52,10 @@ export class SettingsProvider {
     
         return hasAny;
     }
-    }
+}
 
 
-async function reloadSettings(): Promise<Setting[]> {
+async function loadSettings(): Promise<Setting[]> {
     if (!vscode.workspace.workspaceFolders) {
         return [];
     }
@@ -79,14 +64,15 @@ async function reloadSettings(): Promise<Setting[]> {
     try {
         for (const folder of vscode.workspace.workspaceFolders) {
             const jenkinsSettingsPath = await getConfigPath(folder.uri);            
-            if (jenkinsSettingsPath.fsPath !== folder.uri.fsPath) {
-                const jenkinsSettings = await readSettings(jenkinsSettingsPath);
-                if (!jenkinsSettings) {
-                    return undefined;
-                }
-                const jenkinsSettings2 = Array.isArray(jenkinsSettings) ? jenkinsSettings : [jenkinsSettings];
-                settings = settings.concat(...jenkinsSettings2);
+            if (!jenkinsSettingsPath) {
+                continue;
             }
+            const jenkinsSettings = await readSettings(jenkinsSettingsPath);
+            if (!jenkinsSettings) {
+                return undefined;
+            }
+            const jenkinsSettings2 = Array.isArray(jenkinsSettings) ? jenkinsSettings : [jenkinsSettings];
+            settings = settings.concat(...jenkinsSettings2);
         }       
     } catch (error) {
         vscode.window.showErrorMessage(l10n.t("Error while retrieving Jenkins settings"));
@@ -117,14 +103,14 @@ async function readSettings(jenkinsSettingsPath: Uri): Promise<string> {
     }
 }
 
-async function getConfigPath(uri: Uri): Promise<Uri> {
+async function getConfigPath(uri: Uri): Promise<Uri|undefined> {
     for (const fileName of [".jenkinsrc.js", ".jenkins"]) {
         const path = Uri.joinPath(uri, fileName);
         if (uriExists(path)) {
             return path;
         }
     }
-    return uri;
+    return undefined;
 }
 
 async function uriExists(uri: vscode.Uri) {
