@@ -6,7 +6,15 @@ declare const __webpack_require__: typeof require;
 declare const __non_webpack_require__: typeof require;
 
 
-export class SettingsProvider {
+export interface SettingsProvider extends vscode.Disposable {
+    onSettingsChange: vscode.Event<Setting[]>;
+    currentSettings: Setting[];
+    update(): Promise<void>;
+    isJenkinsEnabled(): Promise<boolean>;
+}
+
+
+export class DefaultSettingsProvider implements SettingsProvider {
 
     private settingsChangeEmitter = new vscode.EventEmitter<Setting[]>();
     public onSettingsChange = this.settingsChangeEmitter.event;
@@ -23,13 +31,13 @@ export class SettingsProvider {
 
     constructor(eventSet: { [name: string]: vscode.Event<unknown> }) {
         for (const [, onEvent] of Object.entries(eventSet)) {
-            onEvent(this.reload, this.subscriptions);
+            onEvent(this.update, this.subscriptions);
         }
     }
 
     public currentSettings: Setting[] = [];
 
-    public async reload() {
+    public async update() {
         this.currentSettings = await loadSettings();
         this.settingsChangeEmitter.fire(this.currentSettings);
     }

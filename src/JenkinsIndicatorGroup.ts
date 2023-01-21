@@ -9,14 +9,14 @@ import { CommandRegistry } from "./CommandRegistry";
 export class JenkinsIndicatorGroup {
     private indicators: { [name: string]: JenkinsIndicator } = {};
     private commandRegistry = new CommandRegistry;
-    private settingsProvider: SettingsProvider;
+    private _settingsProvider: SettingsProvider;
 
 
     public dispose() {
         for (const [, item] of Object.entries(this.indicators)) {
             item.dispose();
         }
-        this.settingsProvider.dispose();
+        this._settingsProvider.dispose();
         this.commandRegistry.dispose();
     }
 
@@ -24,32 +24,36 @@ export class JenkinsIndicatorGroup {
     constructor(settingsProvider: SettingsProvider) {
         this.registerCommands();
         this.settingsProvider = settingsProvider;
-        this.settingsProvider.onSettingsChange(async (settings) => {
+    }
+
+    set settingsProvider(provider: SettingsProvider) {
+        this._settingsProvider = provider;
+        this._settingsProvider.onSettingsChange(async (settings) => {
             await this.updateJenkinsStatus(settings);
         });
     }
 
     private registerCommands() {
         this.commandRegistry.add("jenkins.updateStatus", async () => {
-            if (!await this.settingsProvider.isJenkinsEnabled()) {
+            if (!await this._settingsProvider.isJenkinsEnabled()) {
                 vscode.window.showWarningMessage(l10n.t("The project is not enabled for Jenkins. Missing .jenkins file."));
                 return;
             }
-            this.settingsProvider.reload();
+            this._settingsProvider.update();
         });
         this.commandRegistry.add("jenkins.openInJenkins", async () => {
-            const name = await this.selectJob(this.settingsProvider.currentSettings);
+            const name = await this.selectJob(this._settingsProvider.currentSettings);
             vscode.commands.executeCommand("Jenkins." + name + ".openInJenkins");
         });
         this.commandRegistry.add("jenkins.openInJenkinsConsoleOutput", async () => {
-            const name = await this.selectJob(this.settingsProvider.currentSettings);
+            const name = await this.selectJob(this._settingsProvider.currentSettings);
             vscode.commands.executeCommand("Jenkins." + name + ".openInJenkinsConsoleOutput");
         });
     }
 
 
-    async selectJob(settings: Setting[]) {
-        if (!await this.settingsProvider.isJenkinsEnabled()) {
+    private async selectJob(settings: Setting[]) {
+        if (!await this._settingsProvider.isJenkinsEnabled()) {
             vscode.window.showWarningMessage(l10n.t("The project is not enabled for Jenkins. Missing .jenkins file."));
             return;
         } 
@@ -70,7 +74,7 @@ export class JenkinsIndicatorGroup {
     }
 
 
-    public async updateJenkinsStatus(settings: Setting[]): Promise<Setting[]> {        
+    private async updateJenkinsStatus(settings: Setting[]): Promise<Setting[]> {        
         if (!settings) {
             return;
         }

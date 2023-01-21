@@ -5,21 +5,27 @@
 
 import * as vscode from "vscode";
 import { JenkinsIndicatorGroup } from "./JenkinsIndicatorGroup";
-import { SettingsProvider } from "./SettingsProvider";
+import { SettingsProvider, DefaultSettingsProvider } from "./SettingsProvider";
 import { registerWhatsNew } from "./whats-new/commands";
 
 export async function activate(context: vscode.ExtensionContext) {
-    const settingsProvider = new SettingsProvider(buildEventSet(context.subscriptions));
+    const settingsProvider = new DefaultSettingsProvider(buildEventSet(context.subscriptions));
     context.subscriptions.push(settingsProvider);
 
     const indicatorGroup = new JenkinsIndicatorGroup(settingsProvider);
     context.subscriptions.push(indicatorGroup);
 
     if (await settingsProvider.isJenkinsEnabled()) {
-        settingsProvider.reload();
+        settingsProvider.update();
     }
 
     await registerWhatsNew(context);
+
+    return {
+        set settingsProvider(provider: SettingsProvider) {
+            indicatorGroup.settingsProvider = provider;
+        }
+    };
 }
 
 
