@@ -4,40 +4,49 @@ import * as child_process from 'child_process';
 import { Setting } from "./Setting";
 
 
-export interface SettingsProvider extends vscode.Disposable {
-    onSettingsChange: vscode.Event<Setting[]>;
-    currentSettings: Setting[];
-    update(): Promise<void>;
-    isJenkinsEnabled(): Promise<boolean>;
+export class SettingsProvider implements vscode.Disposable {
+	private _settingsChangeEmitter = new vscode.EventEmitter<Setting[]>();
+	public onSettingsChange = this._settingsChangeEmitter.event;
+
+	private _currentSettings?: Setting[];
+	public get currentSettings() {
+		return this._currentSettings || [];
+	}
+    public set currentSettings(settings: Setting[]) {
+        this._currentSettings = settings;
+        this._settingsChangeEmitter.fire(settings);
+    }
+    
+    public async isJenkinsEnabled(): Promise<boolean> {
+        return this.currentSettings?.length > 0; 
+    }
+
+    public async dispose() { this._settingsChangeEmitter.dispose(); }
+    public async update(): Promise<void> {}
 }
 
 
-export class NullSettingsProvider implements SettingsProvider {
-    onSettingsChange() { return { dispose(){} }; };
-    currentSettings = [];
+export class NullSettingsProvider extends SettingsProvider {
     async isJenkinsEnabled() { return false; };
     async update() {}
     async dispose() {}
 }
 
 
-export class DefaultSettingsProvider implements SettingsProvider {
-
-    private _settingsChangeEmitter = new vscode.EventEmitter<Setting[]>();
-    public onSettingsChange = this._settingsChangeEmitter.event;
-
+export class DefaultSettingsProvider extends SettingsProvider {
 
     private _subscriptions: vscode.Disposable[] = [];
 
-    public dispose() {
+    public async dispose() {
         for (const disposable of this._subscriptions) {
             disposable.dispose();
         }
-        this._settingsChangeEmitter.dispose();
+        super.dispose();
     }
 
 
     constructor() {
+        super();
         this.setupEventListeners();
         /* await */ this.update();
     }
@@ -60,18 +69,6 @@ export class DefaultSettingsProvider implements SettingsProvider {
         // if (polling > 0) {
         //     setInterval(this.update, polling * 60000);    
         // }
-    }
-
-
-    private _currentSettings: Setting[] = [];
-
-    public get currentSettings() {
-        return this._currentSettings;
-    }
-
-    public set currentSettings(settings: Setting[]) {
-        this._currentSettings = settings;
-        this._settingsChangeEmitter.fire(this.currentSettings);
     }
 
 
@@ -155,25 +152,17 @@ async function uriExists(uri: vscode.Uri) {
 }
 
 
-export class CheckedOutBranchSettingsProvider implements SettingsProvider {
-	private _settingsChangeEmitter = new vscode.EventEmitter<Setting[]>();
-	public onSettingsChange = this._settingsChangeEmitter.event;
+export class CheckedOutBranchSettingsProvider extends SettingsProvider {
+    private _subscriptions: vscode.Disposable[] = [];
+
+    public async dispose(): Promise<void> {
+        this._subscriptions.forEach((disposable) => disposable.dispose());
+    }
 
 	constructor() {
+        super();
+        vscode.workspace.onDidChangeWorkspaceFolders(this.update.bind(this), this._subscriptions);
 		this.update();
-	}
-
-	private _currentSettings?: Setting[];
-	get currentSettings() {
-		return this._currentSettings || [];
-	}
-
-	dispose() {
-		this._settingsChangeEmitter.dispose();
-	}
-
-	async isJenkinsEnabled(): Promise<boolean> {
-		return true;
 	}
 
 	async update(): Promise<void> {
@@ -186,9 +175,9 @@ export class CheckedOutBranchSettingsProvider implements SettingsProvider {
 		const cmd = `git -C ${dir} rev-parse --abbrev-ref HEAD`;
 		const branch: string = await new Promise((resolve) => child_process.exec(cmd, (error, stdout, stderr) => resolve(stdout.trim())));
 
-		this._settingsChangeEmitter.fire([{
+		this.currentSettings = [{
 			name: branch,
 			url: `http://so-srv-jenkins:8080/job/DCP/job/${branch}/`,
-		}]);
+		}];
 	}
 }
