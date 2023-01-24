@@ -39,7 +39,6 @@ export class JenkinsIndicatorGroup implements vscode.Disposable {
     set updatePolicy(policy: UpdatePolicy) {
         this._updatePolicy = policy;
         this._updatePolicy.onShouldUpdate((async () => {
-            vscode.window.showInformationMessage("Updating status...");
             Object.entries(this._indicators).forEach(([, indicator]) => indicator.update());
         }));
     }
