@@ -175,9 +175,11 @@ export class CheckedOutBranchSettingsProvider extends SettingsProvider {
 		const cmd = `git -C ${dir} rev-parse --abbrev-ref HEAD`;
 		const branch: string = await new Promise((resolve) => child_process.exec(cmd, (error, stdout, stderr) => resolve(stdout.trim())));
 
-		this.currentSettings = [{
-			name: branch,
-			url: `http://so-srv-jenkins:8080/job/DCP/job/${branch}/`,
-		}];
+        const m = branch.match(/^DC-\d+/);
+        const name: string = m ? m[0] : branch;
+
+        const url = `http://so-srv-jenkins:8080/job/DCP/job/${branch}/`;
+
+		this.currentSettings = [{ name, url }];
 	}
 }
