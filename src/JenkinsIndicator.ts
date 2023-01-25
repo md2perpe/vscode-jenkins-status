@@ -28,9 +28,7 @@ export class JenkinsIndicator implements vscode.Disposable {
         this._name = name;
         this._setting = setting;
 
-        this._statusbarItem = vscode.window.createStatusBarItem(/*`alefragnani.jenkins-status.[${name}]`,*/ vscode.StatusBarAlignment.Left);
-        // this._statusbarItem.name = "Kalle"; //name;
-        // this._statusbarItem.text = "Anka";  //name;
+        this._statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
         this._statusbarItem.command = "Jenkins." + name + ".openInJenkins";
         this.update();
 
