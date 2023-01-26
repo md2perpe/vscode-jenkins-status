@@ -72,7 +72,7 @@ export class JenkinsIndicator implements vscode.Disposable {
         const pw   = this._setting.password || "";
 
         jenkins.getStatus(url, user, pw).then((status) => {
-            this._statusbarItem.text = buildIcon(status) + " " + this._setting.name;
+            this._statusbarItem.text = `${buildIcon(status)} Jenkins`;  //buildIcon(status) + " " + this._setting.name;
             this._statusbarItem.tooltip = buildTooltip(status);
             this._statusbarItem.show();
         });
