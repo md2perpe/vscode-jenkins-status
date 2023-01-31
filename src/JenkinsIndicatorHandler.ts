@@ -6,7 +6,7 @@ import { CommandRegistry } from "./CommandRegistry";
 import { NullUpdatePolicy, UpdatePolicy } from "./UpdatePolicy";
 
 
-export class JenkinsIndicatorGroup implements vscode.Disposable {
+export class JenkinsIndicatorHandler implements vscode.Disposable {
     private _indicators: { [name: string]: JenkinsIndicator } = {};
     private _commandRegistry = new CommandRegistry;
 
