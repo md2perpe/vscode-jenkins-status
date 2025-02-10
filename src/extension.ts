@@ -11,12 +11,13 @@ export async function activate(context: vscode.ExtensionContext) {
 	// const settingsProvider = new DefaultSettingsProvider();
 	const settingsProvider = new CheckedOutBranchSettingsProvider();
 	const updatePolicy = new DefaultUpdatePolicy();
-    const indicatorGroup = new JenkinsIndicatorHandler(settingsProvider, updatePolicy);
-    context.subscriptions.push(settingsProvider, indicatorGroup);
+    const indicatorHandler = new JenkinsIndicatorHandler(settingsProvider, updatePolicy);
+
+    context.subscriptions.push(settingsProvider, updatePolicy, indicatorHandler);
 
     return {
         set settingsProvider(provider: SettingsProvider) {
-            indicatorGroup.settingsProvider = provider;
+            indicatorHandler.settingsProvider = provider;
         }
     };
 }
