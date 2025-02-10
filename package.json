@@ -2,7 +2,7 @@
   "name": "jenkins-status",
   "displayName": "Jenkins Status",
   "description": "",
-  "publisher": "per.persson@smartoptics.com",
+  "publisher": "md2perpe",
   "version": "0.0.5",
   "engines": {
     "vscode": "^1.74.0"
